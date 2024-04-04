@@ -1,11 +1,32 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
 package(features = ["no_copts_tokenization"])
 
+bool_flag(
+    name = "use_mbedtls",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "use_mbedtls_setting",
+    flag_values = {":use_mbedtls": "true"},
+)
+
+bool_flag(
+    name = "http_only",
+    build_setting_default = True,
+)
+
+config_setting(
+    name = "http_only_setting",
+    flag_values = {":http_only": "true"},
+)
+
 _BASE_CURL_COPTS = [
-    # Disable everything else except HTTP protocol.
-    "-DHTTP_ONLY=1",
+    "-DCURL_DISABLE_LDAP=1",
     "-DENABLE_IPV6=1",
     "-DGETHOSTNAME_TYPE_ARG2=size_t",
     "-DGETSERVBYPORT_R_ARGS=6",
@@ -171,14 +192,11 @@ cc_library(
     name = "curl",
     srcs = glob([
         "lib/**/*.c",
-    ]),
-    hdrs = glob([
-        "include/curl/*.h",
         "lib/**/*.h",
     ]),
+    hdrs = glob(["include/curl/*.h"]),
     copts = select({
         "@platforms//os:windows": [
-            "/DCURL_STATICLIB",
             "/DWIN32",
             "/DBUILDING_LIBCURL",
             "/DUSE_WIN32_IDN",
@@ -215,5 +233,27 @@ cc_library(
             "-lpthread",
         ],
     }),
+    local_defines = select({
+        ":use_mbedtls_setting": ["USE_MBEDTLS"],
+        "//conditions:default": [],
+    }) + select({
+        ":http_only_setting": ["HTTP_ONLY"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
+    deps = select({
+        ":use_mbedtls_setting": ["@mbedtls"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_binary(
+    name = "linktest",
+    linkopts = select({
+        "@platforms//os:macos": ["-all_load"],
+        "//conditions:default": [],
+    }),
+    linkshared = True,
+    visibility = ["//visibility:private"],
+    deps = [":curl"],
 )
