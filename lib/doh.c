@@ -1044,51 +1044,46 @@ static CURLcode local_decode_rdata_name(unsigned char **buf, size_t *remaining,
                                         char **dnsname)
 {
   unsigned char *cp = NULL;
-  int rem = 0;
-  char *thename = NULL, *tp = NULL;
+  size_t rem = 0;
   unsigned char clen = 0; /* chunk len */
+  struct dynbuf thename;
 
+  DEBUGASSERT(buf && remaining && dnsname);
   if(!buf || !remaining || !dnsname)
     return CURLE_OUT_OF_MEMORY;
-  rem = (int)*remaining;
-  thename = calloc(1, CURL_MAXLEN_host_name);
-  if(!thename)
-    return CURLE_OUT_OF_MEMORY;
+  rem = *remaining;
+  Curl_dyn_init(&thename, CURL_MAXLEN_host_name);
   cp = *buf;
-  tp = thename;
   clen = *cp++;
   if(clen == 0) {
     /* special case - return "." as name */
-    thename[0] = '.';
-    thename[1] = 0x00;
+    if(Curl_dyn_addn(&thename, ".", 1))
+      return CURLE_OUT_OF_MEMORY;
   }
   while(clen) {
     if(clen >= rem) {
-      free(thename);
+      Curl_dyn_free(&thename);
       return CURLE_OUT_OF_MEMORY;
     }
-    if(((tp - thename) + clen) > CURL_MAXLEN_host_name) {
-      free(thename);
-      return CURLE_OUT_OF_MEMORY;
-    }
-    memcpy(tp, cp, clen);
-    tp += clen;
-    *tp++ = '.';
+    if(Curl_dyn_addn(&thename, cp, clen) ||
+       Curl_dyn_addn(&thename, ".", 1))
+      return CURLE_TOO_LARGE;
+
     cp += clen;
-    rem -= (clen + 1);
+    rem -= (size_t)(clen + 1);
     if(rem <= 0) {
-      free(thename);
+      Curl_dyn_free(&thename);
       return CURLE_OUT_OF_MEMORY;
     }
     clen = *cp++;
   }
   *buf = cp;
   if(rem <= 0) {
-    free(thename);
+    Curl_dyn_free(&thename);
     return CURLE_OUT_OF_MEMORY;
   }
   *remaining = rem - 1;
-  *dnsname = thename;
+  *dnsname = Curl_dyn_ptr(&thename);
   return CURLE_OK;
 }
 
