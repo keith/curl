@@ -1237,12 +1237,9 @@ static CURLcode Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
   return CURLE_OK;
 err:
   if(lhrr) {
-    if(lhrr->target)
-      free(lhrr->target);
-    if(lhrr->echconfiglist)
-      free(lhrr->echconfiglist);
-    if(lhrr->val)
-      free(lhrr->val);
+    free(lhrr->target);
+    free(lhrr->echconfiglist);
+    free(lhrr->val);
     free(lhrr);
   }
   return CURLE_OUT_OF_MEMORY;
