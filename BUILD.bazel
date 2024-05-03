@@ -57,7 +57,6 @@ cc_library(
     ]),
     hdrs = glob(["include/curl/*.h"]),
     defines = [
-        "BUILDING_LIBCURL",
         "CURL_STATICLIB",
     ],
     includes = [
@@ -80,6 +79,7 @@ cc_library(
         ],
     }),
     local_defines = [
+        "BUILDING_LIBCURL",
         "HAVE_CONFIG_H",
     ] + select({
         ":http_only_setting": ["HTTP_ONLY"],
