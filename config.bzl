@@ -212,8 +212,6 @@ _DISABLED_SETTINGS = sets.make([
     "PACKAGE_STRING",
     "PACKAGE_TARNAME",
     "PACKAGE_VERSION",
-    "size_t",
-    "ssize_t",
     "USE_ARES",
     "USE_BEARSSL",
     "USE_GNUTLS",
@@ -270,9 +268,13 @@ _DISABLED_SETTINGS_MACOS = sets.make([
     "HAVE_GETHOSTBYNAME_R_6",
     "HAVE_MEMRCHR",
     "HAVE_POLL_FINE",
+    "size_t",
+    "ssize_t",
 ])
 
 _DISABLED_SETTINGS_LINUX = sets.make([
+    "size_t",
+    "ssize_t",
 ])
 
 _DISABLED_SETTINGS_WINDOWS = sets.make([
@@ -468,4 +470,40 @@ def get_substitutions():
                 ),
             )
         ]),
+    }) | select({
+        "@platforms//os:macos": get_ca_substitutions("/etc/ssl/cert.pem", "/etc/ssl/certs"),
+        "@platforms//os:linux": get_ca_substitutions("/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs"),
+        "@platforms//os:windows": dict([
+            disabled_setting_substitution("CURL_CA_BUNDLE"),
+            disabled_setting_substitution("CURL_CA_PATH"),
+        ]),
+    }) | select({
+        "@platforms//os:windows": dict([
+            disabled_setting_substitution("RANDOM_FILE"),
+        ]),
+        "//conditions:default": get_random_file_substitutions("/dev/urandom"),
+    }) | select({
+        "@platforms//os:windows": dict([
+            disabled_setting_substitution("CURL_EXTERN_SYMBOL"),
+        ]),
+        "//conditions:default": {
+            "#cmakedefine CURL_EXTERN_SYMBOL ${CURL_EXTERN_SYMBOL}": '__attribute__ ((__visibility__ ("default")))',
+        },
+    }) | select({
+        "@platforms//os:windows": dict([
+            disabled_setting_substitution("_FILE_OFFSET_BITS"),
+        ]),
+        "//conditions:default": {
+            "#cmakedefine _FILE_OFFSET_BITS ${_FILE_OFFSET_BITS}": "#define _FILE_OFFSET_BITS 64",
+        },
+    }) | select({
+        "@platforms//os:macos": get_os_substitutions("Darwin"),
+        "@platforms//os:linux": get_os_substitutions("Linux"),
+        "@platforms//os:windows": get_os_substitutions("Windows"),
+    }) | select({
+        "@platforms//os:windows": {
+            "#cmakedefine size_t ${size_t}": "#define size_t size_t",
+            "#cmakedefine ssize_t ${ssize_t}": "#define ssize_t ssize_t",
+        },
+        "//conditions:default": {},
     })
