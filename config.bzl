@@ -503,7 +503,7 @@ def get_substitutions():
     }) | select({
         "@platforms//os:windows": {
             "#cmakedefine size_t ${size_t}": "#define size_t size_t",
-            "#cmakedefine ssize_t ${ssize_t}": "#define ssize_t ssize_t",
+            "#cmakedefine ssize_t ${ssize_t}": "#define ssize_t long",
         },
         "//conditions:default": {},
     })
