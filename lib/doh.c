@@ -1103,7 +1103,7 @@ static CURLcode local_decode_rdata_alpn(unsigned char *rrval, size_t len,
    */
   int remaining = (int) len;
   char *oval;
-  size_t olen = 0, i;
+  size_t i;
   unsigned char *cp = rrval;
   struct dynbuf dval;
 
@@ -1132,13 +1132,10 @@ static CURLcode local_decode_rdata_alpn(unsigned char *rrval, size_t len,
     }
     remaining -= (int)tlen;
   }
-  olen = Curl_dyn_len(&dval);
-  /* I think the + 1 here is ok but it could trigger a read error */
-  oval = (char *)Curl_memdup(Curl_dyn_ptr(&dval), olen + 1);
+  /* this string is always null terminated */
+  oval = Curl_dyn_ptr(&dval);
   if(!oval)
     goto err;
-  Curl_dyn_free(&dval);
-  oval[olen]='\0';
   *alpns = oval;
   return CURLE_OK;
 err:
