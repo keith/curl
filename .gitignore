@@ -1,5 +1,6 @@
 # Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
 #
+cbuild
 # SPDX-License-Identifier: curl
 
 *.asc
