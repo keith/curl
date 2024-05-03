@@ -1184,11 +1184,10 @@ static CURLcode Curl_doh_decode_httpsrr(unsigned char *rrval, size_t len,
   lhrr = calloc(1, sizeof(struct Curl_https_rrinfo));
   if(!lhrr)
     return CURLE_OUT_OF_MEMORY;
-  lhrr->val = calloc(1, len);
+  lhrr->val = Curl_memdup(rrval, len);
   if(!lhrr->val)
     goto err;
   lhrr->len = len;
-  memcpy(lhrr->val, rrval, len);
   if(remaining <= 2)
     goto err;
   lhrr->priority = (uint16_t)((cp[0] << 8) + cp[1]);
