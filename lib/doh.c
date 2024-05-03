@@ -1044,14 +1044,14 @@ static CURLcode local_decode_rdata_name(unsigned char **buf, size_t *remaining,
                                         char **dnsname)
 {
   unsigned char *cp = NULL;
-  size_t rem = 0;
+  int rem = 0;
   unsigned char clen = 0; /* chunk len */
   struct dynbuf thename;
 
   DEBUGASSERT(buf && remaining && dnsname);
   if(!buf || !remaining || !dnsname)
     return CURLE_OUT_OF_MEMORY;
-  rem = *remaining;
+  rem = (int)*remaining;
   Curl_dyn_init(&thename, CURL_MAXLEN_host_name);
   cp = *buf;
   clen = *cp++;
@@ -1070,7 +1070,7 @@ static CURLcode local_decode_rdata_name(unsigned char **buf, size_t *remaining,
       return CURLE_TOO_LARGE;
 
     cp += clen;
-    rem -= (size_t)(clen + 1);
+    rem -= (clen + 1);
     if(rem <= 0) {
       Curl_dyn_free(&thename);
       return CURLE_OUT_OF_MEMORY;
