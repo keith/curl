@@ -7,9 +7,6 @@ load(
     "//:config.bzl",
     "disabled_setting_substitution",
     "enabled_setting_substitution",
-    "get_ca_substitutions",
-    "get_os_substitutions",
-    "get_random_file_substitutions",
     "get_substitutions",
 )
 
