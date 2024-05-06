@@ -282,7 +282,6 @@ _DISABLED_SETTINGS_WINDOWS = sets.make([
     "HAVE_ARPA_INET_H",
     "HAVE_ATOMIC",
     "HAVE_BASENAME",
-    "HAVE_BOOL_T",
     "HAVE_BUILTIN_AVAILABLE",
     "HAVE_CLOCK_GETTIME_MONOTONIC",
     "HAVE_CLOCK_GETTIME_MONOTONIC_RAW",
@@ -309,7 +308,6 @@ _DISABLED_SETTINGS_WINDOWS = sets.make([
     "HAVE_IF_NAMETOINDEX",
     "HAVE_IFADDRS_H",
     "HAVE_INET_NTOP",
-    "HAVE_INET_PTON",
     "HAVE_IOCTL_FIONBIO",
     "HAVE_IOCTL_SIOCGIFADDR",
     "HAVE_LBER_H",
@@ -398,12 +396,19 @@ def get_substitutions():
         "${SIZEOF_CURL_OFF_T_CODE}": "#define SIZEOF_CURL_OFF_T 8",
         "${SIZEOF_CURL_SOCKET_T_CODE}": "#define SIZEOF_CURL_SOCKET_T 4",
         "${SIZEOF_INT_CODE}": "#define SIZEOF_INT 4",
-        "${SIZEOF_LONG_CODE}": "#define SIZEOF_LONG 8",
         "${SIZEOF_LONG_LONG_CODE}": "#define SIZEOF_LONG_LONG 8",
-        "${SIZEOF_OFF_T_CODE}": "#define SIZEOF_OFF_T 8",
         "${SIZEOF_SIZE_T_CODE}": "#define SIZEOF_SIZE_T 8",
         "${SIZEOF_TIME_T_CODE}": "#define SIZEOF_TIME_T 8",
     } | select({
+        "@platforms//os:windows": {
+            "${SIZEOF_LONG_CODE}": "#define SIZEOF_LONG 4",
+            "${SIZEOF_OFF_T_CODE}": "#define SIZEOF_OFF_T 4",
+        },
+        "//conditions:default": {
+            "${SIZEOF_LONG_CODE}": "#define SIZEOF_LONG 8",
+            "${SIZEOF_OFF_T_CODE}": "#define SIZEOF_OFF_T 8",
+        },
+    }) | select({
         "@platforms//os:macos": dict([
             enabled_setting_substitution(x)
             for x in sets.to_list(
