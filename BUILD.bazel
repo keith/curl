@@ -33,6 +33,15 @@ config_setting(
 )
 
 expand_template(
+    name = "curl_setup",
+    out = "curl_setup.h",
+    substitutions = {
+        "#else /* HAVE_CONFIG_H */": "// force both configs to load",
+    },
+    template = "lib/curl_setup.h",
+)
+
+expand_template(
     name = "curl_config",
     out = "lib/curl_config.h",
     substitutions =
@@ -48,10 +57,14 @@ cc_library(
     name = "curl",
     srcs = [
         ":curl_config",
-    ] + glob([
-        "lib/**/*.c",
-        "lib/**/*.h",
-    ]),
+        ":curl_setup",
+    ] + glob(
+        [
+            "lib/**/*.c",
+            "lib/**/*.h",
+        ],
+        exclude = ["lib/curl_setup.h"],
+    ),
     hdrs = glob(["include/curl/*.h"]),
     defines = [
         "CURL_STATICLIB",
