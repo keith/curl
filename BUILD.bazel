@@ -1,7 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 
 package(features = ["no_copts_tokenization"])
 
@@ -25,6 +25,35 @@ config_setting(
     flag_values = {":http_only": "true"},
 )
 
+# Curl's default CA path depends on the OS. If CURL_CA_BUNDLE/CURL_CA_PATH are not set,
+# (and you don't `curl_easy_setopt(curl_, CURLOPT_CAPATH, "/etc/ssl/certs");`), curl
+# will fail to verify server certificates.
+# The string_flag below allows the user to specify their (OS-specific) default CA path
+# like `--@curl//:ca_bundle=/etc/ssl/certs/ca-certificates.crt` on the command line or
+# in .bazelrc. See also https://github.com/curl/curl/blob/curl-8_8_0/acinclude.m4#L1202
+
+string_flag(
+    name = "ca_bundle",
+    build_setting_default = "",
+    make_variable = "CURL_CA_BUNDLE",
+)
+
+config_setting(
+    name = "ca_bundle_is_unset",
+    flag_values = {":ca_bundle": ""},
+)
+
+string_flag(
+    name = "ca_path",
+    build_setting_default = "",
+    make_variable = "CURL_CA_PATH",
+)
+
+config_setting(
+    name = "ca_path_is_unset",
+    flag_values = {":ca_path": ""},
+)
+
 _BASE_CURL_COPTS = [
     "-DCURL_DISABLE_LDAP=1",
     "-DENABLE_IPV6=1",
@@ -40,6 +69,7 @@ _BASE_CURL_COPTS = [
     "-DHAVE_BOOL_T=1",
     "-DHAVE_CLOCK_GETTIME_MONOTONIC=1",
     "-DHAVE_CONNECT=1",
+    "-DHAVE_DIRENT_H=1",
     "-DHAVE_DLFCN_H=1",
     "-DHAVE_ENGINE_LOAD_BUILTIN_ENGINES=1",
     "-DHAVE_ERRNO_H=1",
@@ -92,6 +122,7 @@ _BASE_CURL_COPTS = [
     "-DHAVE_NETINET_IN_H=1",
     "-DHAVE_NETINET_TCP_H=1",
     "-DHAVE_NET_IF_H=1",
+    "-DHAVE_OPENDIR=1",
     "-DHAVE_PIPE=1",
     "-DHAVE_POLL=1",
     "-DHAVE_POLL_FINE=1",
@@ -240,7 +271,17 @@ cc_library(
     }) + select({
         ":http_only_setting": ["HTTP_ONLY"],
         "//conditions:default": [],
+    }) + select({
+        ":ca_bundle_is_unset": [],
+        "//conditions:default": ['CURL_CA_BUNDLE=\\"$(CURL_CA_BUNDLE)\\"'],
+    }) + select({
+        ":ca_path_is_unset": [],
+        "//conditions:default": ['CURL_CA_PATH=\\"$(CURL_CA_PATH)\\"'],
     }),
+    toolchains = [
+        ":ca_bundle",
+        ":ca_path",
+    ],
     visibility = ["//visibility:public"],
     deps = select({
         ":use_mbedtls_setting": ["@mbedtls"],
