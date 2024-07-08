@@ -266,6 +266,16 @@ cc_library(
         ],
     }),
     local_defines = select({
+        "@platforms//os:macos": [
+            'CURL_CA_BUNDLE=\\"/etc/ssl/cert.pem\\"',
+            'CURL_CA_PATH=\\"/etc/ssl/certs\\"',
+        ],
+        "@platforms//os:linux": [
+            'CURL_CA_BUNDLE=\\"/etc/ssl/certs/ca-certificates.crt\\"',
+            'CURL_CA_PATH=\\"/etc/ssl/certs\\"',
+        ],
+        "//conditions:default": [],
+    }) + select({
         ":use_mbedtls_setting": ["USE_MBEDTLS"],
         "//conditions:default": [],
     }) + select({
