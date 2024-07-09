@@ -43,6 +43,18 @@ config_setting(
     flag_values = {":ca_bundle": ""},
 )
 
+config_setting(
+    name = "ca_bundle_is_unset_linux",
+    constraint_values = ["@platforms//os:linux"],
+    flag_values = {":ca_bundle": ""},
+)
+
+config_setting(
+    name = "ca_bundle_is_unset_macos",
+    constraint_values = ["@platforms//os:macos"],
+    flag_values = {":ca_bundle": ""},
+)
+
 string_flag(
     name = "ca_path",
     build_setting_default = "",
@@ -51,6 +63,12 @@ string_flag(
 
 config_setting(
     name = "ca_path_is_unset",
+    flag_values = {":ca_path": ""},
+)
+
+config_setting(
+    name = "ca_path_is_unset_windows",
+    constraint_values = ["@platforms//os:windows"],
     flag_values = {":ca_path": ""},
 )
 
@@ -266,26 +284,19 @@ cc_library(
         ],
     }),
     local_defines = select({
-        "@platforms//os:macos": [
-            'CURL_CA_BUNDLE=\\"/etc/ssl/cert.pem\\"',
-            'CURL_CA_PATH=\\"/etc/ssl/certs\\"',
-        ],
-        "@platforms//os:linux": [
-            'CURL_CA_BUNDLE=\\"/etc/ssl/certs/ca-certificates.crt\\"',
-            'CURL_CA_PATH=\\"/etc/ssl/certs\\"',
-        ],
-        "//conditions:default": [],
-    }) + select({
         ":use_mbedtls_setting": ["USE_MBEDTLS"],
         "//conditions:default": [],
     }) + select({
         ":http_only_setting": ["HTTP_ONLY"],
         "//conditions:default": [],
     }) + select({
+        ":ca_bundle_is_unset_linux": ['CURL_CA_BUNDLE=\\"/etc/ssl/certs/ca-certificates.crt\\"'],
+        ":ca_bundle_is_unset_macos": ['CURL_CA_BUNDLE=\\"/etc/ssl/cert.pem\\"'],
         ":ca_bundle_is_unset": [],
         "//conditions:default": ['CURL_CA_BUNDLE=\\"$(CURL_CA_BUNDLE)\\"'],
     }) + select({
-        ":ca_path_is_unset": [],
+        ":ca_path_is_unset_windows": [],
+        ":ca_path_is_unset": ['CURL_CA_PATH=\\"/etc/ssl/certs\\"'],
         "//conditions:default": ['CURL_CA_PATH=\\"$(CURL_CA_PATH)\\"'],
     }),
     toolchains = [
